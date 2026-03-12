@@ -22,7 +22,7 @@ url = "https://authorize.vuce.gob.pe/api/mr-administracion/solicitud/buscar"
 
 params = {
     "componente": 1,
-    "fechaRegistro.min": "2025-09-11",
+    "fechaRegistro.min": "2025-09-17",
     "fechaRegistro.max": "2026-12-31",
     "cantidad": 10,
     "pagina": 1,
