@@ -69,7 +69,7 @@ mail.select("INBOX")
 
 print("Buscando correos VUCE")
 
-status, messages = mail.search(None, '(FROM "vuceenlinea@mincetur.gob.pe")')
+status, messages = mail.search(None, '(FROM "pba@consultorabarreto.com")')
 
 ids = messages[0].split()
 
