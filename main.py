@@ -138,13 +138,18 @@ for num in reversed(ids):
     # -------------------------
     # DETECTAR ESTADO
     # -------------------------
-
     estado = None
 
     if "Se ha iniciado el Trámite" in texto:
         estado = "PENDIENTE DE RESPUESTA DE LA ENTIDAD"
 
     elif "Se ha Admitido la Respuesta" in texto:
+        estado = "RESPUESTA DEL USUARIO"
+
+    elif "ha enviado una notificacion" in texto.lower():
+        estado = "RESPUESTA DEL USUARIO"
+
+    elif "Notificación" in texto:
         estado = "RESPUESTA DEL USUARIO"
 
     elif "Se ha culminado el trámite" in texto:
@@ -155,7 +160,6 @@ for num in reversed(ids):
 
     elif "Se Anula por Caducidad" in texto:
         estado = "CADUCADO"
-
 
     # -------------------------
     # EXTRAER EXPEDIENTE
