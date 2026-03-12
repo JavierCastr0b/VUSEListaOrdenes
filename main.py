@@ -3,6 +3,7 @@ import psycopg2
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+print("DATABASE_URL:", DATABASE_URL)
 SESSION_ID = os.getenv("VUCE_SESSION")
 
 conn = psycopg2.connect(DATABASE_URL)
