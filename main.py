@@ -2,6 +2,7 @@ import requests
 import psycopg2
 import os
 import sys
+from datetime import datetime
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 SESSION_ID = os.getenv("VUCE_SESSION")
@@ -23,7 +24,7 @@ url = "https://authorize.vuce.gob.pe/api/mr-administracion/solicitud/buscar"
 params = {
     "componente": 1,
     "fechaRegistro.min": "2025-09-17",
-    "fechaRegistro.max": "2026-12-31",
+    "fechaRegistro.max": datetime.now().strftime("%Y-%m-%d"),
     "cantidad": 10,
     "pagina": 1,
     "etapa": "TODOS"
