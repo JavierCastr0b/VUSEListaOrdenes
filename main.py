@@ -25,7 +25,7 @@ params = {
     "componente": 1,
     "fechaRegistro.min": "2025-09-17",
     "fechaRegistro.max": datetime.now().strftime("%Y-%m-%d"),
-    "cantidad": 10,
+    "cantidad":100,
     "pagina": 1,
     "etapa": "TODOS"
 }
