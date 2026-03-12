@@ -74,8 +74,10 @@ mail.select("INBOX")
 
 print("Buscando correos")
 
-status, messages = mail.search(None, '(FROM "pba@consultorabarreto.com")')
-
+status, messages = mail.search(
+    None,
+    '(FROM "pba@consultorabarreto.com" SUBJECT "VUCE")'
+)
 if status != "OK":
     raise Exception("Error buscando correos")
 
