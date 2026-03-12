@@ -76,7 +76,7 @@ print("Buscando correos")
 
 status, messages = mail.search(
     None,
-    '(FROM "nicolas.perales34@gmail.com" SUBJECT "VUCE")'
+    '(FROM "javier.castro@utec.edu.pe" SUBJECT "VUCE")'
 )
 if status != "OK":
     raise Exception("Error buscando correos")
