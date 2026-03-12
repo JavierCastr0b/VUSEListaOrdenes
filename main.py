@@ -14,6 +14,7 @@ EMAIL_PASS = os.getenv("EMAIL_PASS")
 if not EMAIL_USER or not EMAIL_PASS:
     raise Exception("Faltan variables EMAIL_USER o EMAIL_PASS")
 
+
 # -------------------------
 # GOOGLE SHEETS
 # -------------------------
@@ -51,7 +52,7 @@ def actualizar_estado(expediente, estado):
 
     for i, row in enumerate(rows):
 
-        if str(row["EXP"]) == str(expediente):
+        if str(row["EXP"]).strip() == str(expediente).strip():
 
             sheet.update_cell(i + 2, 8, estado)
 
@@ -78,6 +79,7 @@ status, messages = mail.search(
     None,
     '(FROM "javier.castro@utec.edu.pe" SUBJECT "VUCE")'
 )
+
 if status != "OK":
     raise Exception("Error buscando correos")
 
@@ -85,8 +87,9 @@ ids = messages[0].split()
 
 print("Correos encontrados:", len(ids))
 
-# procesar últimos 10
+# últimos 10 correos
 ids = ids[-10:]
+
 
 for num in reversed(ids):
 
@@ -101,7 +104,10 @@ for num in reversed(ids):
     subject, encoding = decode_header(msg["subject"])[0]
 
     if isinstance(subject, bytes):
-        subject = subject.decode(encoding if encoding else "utf-8", errors="ignore")
+        subject = subject.decode(
+            encoding if encoding else "utf-8",
+            errors="ignore"
+        )
 
     body = ""
 
@@ -125,7 +131,9 @@ for num in reversed(ids):
         if payload:
             body = payload.decode(errors="ignore")
 
+
     texto = subject + " " + body
+
 
     # -------------------------
     # DETECTAR ESTADO
@@ -142,24 +150,35 @@ for num in reversed(ids):
     elif "Se ha culminado el trámite" in texto:
         estado = "APROBADO"
 
+    elif "Documento Resolutivo" in texto:
+        estado = "APROBADO"
+
     elif "Se Anula por Caducidad" in texto:
         estado = "CADUCADO"
+
 
     # -------------------------
     # EXTRAER EXPEDIENTE
     # -------------------------
 
-    expediente = re.search(r"Expediente\s+(\d+)", texto)
+    expediente = re.search(
+        r"Expediente(?:\s+Entidad)?\s*[:\-]?\s*(\d+)",
+        texto,
+        re.IGNORECASE
+    )
 
     expediente_id = expediente.group(1) if expediente else None
+
 
     print("Correo:", subject)
     print("Expediente:", expediente_id)
     print("Estado:", estado)
 
+
     if expediente_id and estado:
         actualizar_estado(expediente_id, estado)
 
     print("-" * 40)
+
 
 print("Script terminado")
