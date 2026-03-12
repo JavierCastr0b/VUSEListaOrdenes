@@ -36,7 +36,7 @@ creds = Credentials.from_service_account_file(
 
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key("1Zd1GUmTlaksamOqbBIlqJ9adnIQKKvLQ").worksheet("Hoja1")
+sheet = client.open_by_key("14BuCVESXSJjrF2v9PDSa4mpkZj_L1ptfNAmayxfzcf0").worksheet("Hoja1")
 print("Conectado a Sheets")
 
 
