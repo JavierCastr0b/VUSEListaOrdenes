@@ -14,7 +14,6 @@ EMAIL_PASS = os.getenv("EMAIL_PASS")
 if not EMAIL_USER or not EMAIL_PASS:
     raise Exception("Faltan variables EMAIL_USER o EMAIL_PASS")
 
-
 # -------------------------
 # GOOGLE SHEETS
 # -------------------------
@@ -36,13 +35,19 @@ creds = Credentials.from_service_account_file(
 
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key("14BuCVESXSJjrF2v9PDSa4mpkZj_L1ptfNAmayxfzcf0").worksheet("Hoja1")
+sheet = client.open_by_key(
+    "14BuCVESXSJjrF2v9PDSa4mpkZj_L1ptfNAmayxfzcf0"
+).worksheet("Hoja1")
+
 print("Conectado a Sheets")
 
 
 def actualizar_estado(expediente, estado):
 
-    rows = sheet.get_all_records()
+    rows = sheet.get_all_records(expected_headers=[
+        "EXP","PRODUCTO","TRAMITE","FABRICANTE",
+        "F. INGRESO","F. NOTIF","F. RESPTA","ESTADO","F. REVISION"
+    ])
 
     for i, row in enumerate(rows):
 
@@ -67,20 +72,28 @@ mail.login(EMAIL_USER, EMAIL_PASS)
 
 mail.select("INBOX")
 
-print("Buscando correos VUCE")
+print("Buscando correos")
 
 status, messages = mail.search(None, '(FROM "pba@consultorabarreto.com")')
+
+if status != "OK":
+    raise Exception("Error buscando correos")
 
 ids = messages[0].split()
 
 print("Correos encontrados:", len(ids))
 
+# procesar últimos 10
 ids = ids[-10:]
-
 
 for num in reversed(ids):
 
     status, data = mail.fetch(num, "(RFC822)")
+
+    if status != "OK":
+        print("Error leyendo correo")
+        continue
+
     msg = email.message_from_bytes(data[0][1])
 
     subject, encoding = decode_header(msg["subject"])[0]
@@ -112,7 +125,6 @@ for num in reversed(ids):
 
     texto = subject + " " + body
 
-
     # -------------------------
     # DETECTAR ESTADO
     # -------------------------
@@ -131,7 +143,6 @@ for num in reversed(ids):
     elif "Se Anula por Caducidad" in texto:
         estado = "CADUCADO"
 
-
     # -------------------------
     # EXTRAER EXPEDIENTE
     # -------------------------
@@ -140,11 +151,9 @@ for num in reversed(ids):
 
     expediente_id = expediente.group(1) if expediente else None
 
-
     print("Correo:", subject)
     print("Expediente:", expediente_id)
     print("Estado:", estado)
-
 
     if expediente_id and estado:
         actualizar_estado(expediente_id, estado)
