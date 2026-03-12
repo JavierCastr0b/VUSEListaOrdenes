@@ -36,8 +36,7 @@ creds = Credentials.from_service_account_file(
 
 client = gspread.authorize(creds)
 
-sheet = client.open("TRAMITES DIGEMID 2025 (version 1)").worksheet("Hoja1")
-
+sheet = client.open_by_key("1Zd1GUmTlaksamOqbBIlqJ9adnIQKKvLQ").worksheet("Hoja1")
 print("Conectado a Sheets")
 
 
