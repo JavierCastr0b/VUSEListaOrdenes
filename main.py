@@ -1,132 +1,63 @@
-import requests
-import psycopg2
+import imaplib
+import email
+import re
 import os
-import sys
-from datetime import datetime
+from email.header import decode_header
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-SESSION_ID = os.getenv("VUCE_SESSION")
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
 
-if not DATABASE_URL:
-    print("DATABASE_URL no definida")
-    sys.exit()
+if not EMAIL_USER or not EMAIL_PASS:
+    print("Faltan variables EMAIL_USER o EMAIL_PASS")
+    exit()
 
-if not SESSION_ID:
-    print("VUCE_SESSION no definida")
-    sys.exit()
+# conectar a Gmail
+mail = imaplib.IMAP4_SSL("imap.gmail.com")
+mail.login(EMAIL_USER, EMAIL_PASS)
 
-# conexión postgres
-conn = psycopg2.connect(DATABASE_URL)
-cursor = conn.cursor()
+mail.select("INBOX")
 
-url = "https://authorize.vuce.gob.pe/api/mr-administracion/solicitud/buscar"
+# buscar correos VUCE
+status, messages = mail.search(None, '(FROM "vuceenlinea@mincetur.gob.pe")')
 
-params = {
-    "componente": 1,
-    "fechaRegistro.min": "2025-09-17",
-    "fechaRegistro.max": datetime.now().strftime("%Y-%m-%d"),
-    "cantidad":100,
-    "pagina": 1,
-    "etapa": "TODOS"
-}
+ids = messages[0].split()
 
-headers = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept": "application/json",
-    "Origin": "https://www.vuce.gob.pe",
-    "Referer": "https://www.vuce.gob.pe/",
-    "X-Sesion-Id": SESSION_ID
-}
+# tomar solo los 5 más recientes
+ids = ids[-5:]
 
-response = requests.get(url, headers=headers, params=params)
+for num in reversed(ids):
 
-# manejo de sesión expirada
-if response.status_code == 401:
-    print("Sesion VUCE expirada (401)")
-    sys.exit()
+    status, data = mail.fetch(num, "(RFC822)")
+    msg = email.message_from_bytes(data[0][1])
 
-if response.status_code != 200:
-    print("Error API:", response.status_code)
-    sys.exit()
+    subject, encoding = decode_header(msg["subject"])[0]
+    if isinstance(subject, bytes):
+        subject = subject.decode(encoding if encoding else "utf-8", errors="ignore")
 
-data = response.json()
+    # detectar evento
+    estado = None
 
-if "_embedded" not in data:
-    print("Respuesta inesperada de VUCE")
-    sys.exit()
+    if "Se ha iniciado el Trámite" in subject:
+        estado = "EN_REVISION"
 
-solicitudes = data["_embedded"]["solicitudes"]
+    elif "Se ha Admitido la Respuesta" in subject:
+        estado = "RESPUESTA_ADMITIDA"
 
-cambios = 0
+    elif "Se ha culminado el trámite" in subject:
+        estado = "TRAMITE_CULMINADO"
 
-for s in solicitudes:
+    elif "Se Anula por Caducidad" in subject:
+        estado = "CADUCADO"
 
-    solicitud_id = s["id"]
-    codigo = s["codigo"]
-    tipo = s["tipo"]
+    # extraer datos
+    suce = re.search(r"SUCE\s+(\d+)", subject)
+    expediente = re.search(r"Expediente\s+(\d+)", subject)
 
-    entidad = s["orden"]["entidad"]["nombre"]
+    suce_id = suce.group(1) if suce else None
+    expediente_id = expediente.group(1) if expediente else None
 
-    estado_codigo = s["orden"]["estado"]["codigo"]
-    estado_desc = s["orden"]["estado"]["descripcion"]
-
-    fecha_registro = s["fechaRegistro"]
-
-    cursor.execute(
-        "SELECT estado_codigo FROM solicitudes WHERE id = %s",
-        (solicitud_id,)
-    )
-
-    result = cursor.fetchone()
-
-    if result is None:
-
-        cursor.execute("""
-        INSERT INTO solicitudes (
-            id, codigo, tipo, entidad,
-            estado_codigo, estado_descripcion,
-            fecha_registro
-        )
-        VALUES (%s,%s,%s,%s,%s,%s,%s)
-        """,(
-            solicitud_id,
-            codigo,
-            tipo,
-            entidad,
-            estado_codigo,
-            estado_desc,
-            fecha_registro
-        ))
-
-        cambios += 1
-        print("Nueva solicitud:", codigo)
-
-    else:
-
-        estado_db = result[0]
-
-        if estado_db != estado_codigo:
-
-            cursor.execute("""
-            UPDATE solicitudes
-            SET estado_codigo = %s,
-                estado_descripcion = %s,
-                fecha_actualizacion = NOW()
-            WHERE id = %s
-            """,(
-                estado_codigo,
-                estado_desc,
-                solicitud_id
-            ))
-
-            cambios += 1
-            print("Cambio de estado:", codigo)
-
-conn.commit()
-
-if cambios == 0:
-    print("No hay cambios")
-else:
-    print(f"{cambios} cambios detectados")
-
-conn.close()
+    print("SUBJECT:", subject)
+    print("SUCE:", suce_id)
+    print("EXPEDIENTE:", expediente_id)
+    print("ESTADO:", estado)
+    print("-" * 40)
