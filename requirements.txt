@@ -1,2 +1,5 @@
+gspread
+google-auth
+google-auth-oauthlib
 requests
 psycopg2-binary
