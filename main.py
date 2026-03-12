@@ -6,23 +6,28 @@ from email.header import decode_header
 import gspread
 from google.oauth2.service_account import Credentials
 
+print("Script iniciado")
 
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
 if not EMAIL_USER or not EMAIL_PASS:
-    print("Faltan variables EMAIL_USER o EMAIL_PASS")
-    exit()
+    raise Exception("Faltan variables EMAIL_USER o EMAIL_PASS")
 
 
 # -------------------------
 # GOOGLE SHEETS
 # -------------------------
 
+print("Conectando a Google Sheets")
+
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
+
+if not os.path.exists("credentials.json"):
+    raise Exception("No existe credentials.json")
 
 creds = Credentials.from_service_account_file(
     "credentials.json",
@@ -32,6 +37,8 @@ creds = Credentials.from_service_account_file(
 client = gspread.authorize(creds)
 
 sheet = client.open("TRAMITES DIGEMID 2025 (version 1)").worksheet("Hoja 1")
+
+print("Conectado a Sheets")
 
 
 def actualizar_estado(expediente, estado):
@@ -54,16 +61,21 @@ def actualizar_estado(expediente, estado):
 # GMAIL
 # -------------------------
 
+print("Conectando a Gmail")
+
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(EMAIL_USER, EMAIL_PASS)
 
 mail.select("INBOX")
 
+print("Buscando correos VUCE")
+
 status, messages = mail.search(None, '(FROM "vuceenlinea@mincetur.gob.pe")')
 
 ids = messages[0].split()
 
-# solo últimos 10
+print("Correos encontrados:", len(ids))
+
 ids = ids[-10:]
 
 
@@ -80,6 +92,7 @@ for num in reversed(ids):
     body = ""
 
     if msg.is_multipart():
+
         for part in msg.walk():
 
             content_type = part.get_content_type()
@@ -92,6 +105,7 @@ for num in reversed(ids):
                     body += payload.decode(errors="ignore")
 
     else:
+
         payload = msg.get_payload(decode=True)
 
         if payload:
@@ -134,7 +148,8 @@ for num in reversed(ids):
 
 
     if expediente_id and estado:
-
         actualizar_estado(expediente_id, estado)
 
     print("-" * 40)
+
+print("Script terminado")
