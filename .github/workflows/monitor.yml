@@ -9,6 +9,10 @@ jobs:
   run-script:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      VUCE_SESSION: ${{ secrets.VUCE_SESSION }}
+
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v3
@@ -22,7 +26,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Ejecutar script
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          VUCE_SESSION: ${{ secrets.VUCE_SESSION }}
         run: python main.py
