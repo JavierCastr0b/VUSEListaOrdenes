@@ -2,7 +2,7 @@ name: Monitor VUCE
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # cada 5 minutos
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -22,4 +22,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Ejecutar script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          VUCE_SESSION: ${{ secrets.VUCE_SESSION }}
         run: python main.py
