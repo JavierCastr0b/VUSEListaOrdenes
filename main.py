@@ -4,6 +4,10 @@ import re
 import os
 from email.header import decode_header
 
+import gspread
+from google.oauth2.service_account import Credentials
+
+
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
 
@@ -11,19 +15,58 @@ if not EMAIL_USER or not EMAIL_PASS:
     print("Faltan variables EMAIL_USER o EMAIL_PASS")
     exit()
 
-# conectar a Gmail
+
+# -------------------------
+# GOOGLE SHEETS
+# -------------------------
+
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+
+creds = Credentials.from_service_account_file(
+    "credentials.json",
+    scopes=scope
+)
+
+client = gspread.authorize(creds)
+
+sheet = client.open("TRAMITES DIGEMID 2025 (version 1)").worksheet("Hoja 1")
+
+
+def actualizar_estado(expediente, estado):
+
+    rows = sheet.get_all_records()
+
+    for i, row in enumerate(rows):
+
+        if str(row["EXP"]) == str(expediente):
+
+            sheet.update_cell(i + 2, 8, estado)
+
+            print("Actualizado:", expediente, estado)
+            return
+
+    print("Expediente no encontrado:", expediente)
+
+
+# -------------------------
+# GMAIL
+# -------------------------
+
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(EMAIL_USER, EMAIL_PASS)
 
 mail.select("INBOX")
 
-# buscar correos VUCE
-status, messages = mail.search(None, '(FROM "pba@consultorabarreto.com")')
+status, messages = mail.search(None, '(FROM "vuceenlinea@mincetur.gob.pe")')
 
 ids = messages[0].split()
 
-# tomar solo los 5 más recientes
-ids = ids[-5:]
+# solo últimos 10
+ids = ids[-10:]
+
 
 for num in reversed(ids):
 
@@ -31,33 +74,68 @@ for num in reversed(ids):
     msg = email.message_from_bytes(data[0][1])
 
     subject, encoding = decode_header(msg["subject"])[0]
+
     if isinstance(subject, bytes):
         subject = subject.decode(encoding if encoding else "utf-8", errors="ignore")
 
-    # detectar evento
+    body = ""
+
+    if msg.is_multipart():
+        for part in msg.walk():
+
+            content_type = part.get_content_type()
+
+            if content_type in ["text/plain", "text/html"]:
+
+                payload = part.get_payload(decode=True)
+
+                if payload:
+                    body += payload.decode(errors="ignore")
+
+    else:
+        payload = msg.get_payload(decode=True)
+
+        if payload:
+            body = payload.decode(errors="ignore")
+
+    texto = subject + " " + body
+
+
+    # -------------------------
+    # DETECTAR ESTADO
+    # -------------------------
+
     estado = None
 
-    if "Se ha iniciado el Trámite" in subject:
-        estado = "EN_REVISION"
+    if "Se ha iniciado el Trámite" in texto:
+        estado = "PENDIENTE DE RESPUESTA DE LA ENTIDAD"
 
-    elif "Se ha Admitido la Respuesta" in subject:
-        estado = "RESPUESTA_ADMITIDA"
+    elif "Se ha Admitido la Respuesta" in texto:
+        estado = "RESPUESTA DEL USUARIO"
 
-    elif "Se ha culminado el trámite" in subject:
-        estado = "TRAMITE_CULMINADO"
+    elif "Se ha culminado el trámite" in texto:
+        estado = "APROBADO"
 
-    elif "Se Anula por Caducidad" in subject:
+    elif "Se Anula por Caducidad" in texto:
         estado = "CADUCADO"
 
-    # extraer datos
-    suce = re.search(r"SUCE\s+(\d+)", subject)
-    expediente = re.search(r"Expediente\s+(\d+)", subject)
 
-    suce_id = suce.group(1) if suce else None
+    # -------------------------
+    # EXTRAER EXPEDIENTE
+    # -------------------------
+
+    expediente = re.search(r"Expediente\s+(\d+)", texto)
+
     expediente_id = expediente.group(1) if expediente else None
 
-    print("SUBJECT:", subject)
-    print("SUCE:", suce_id)
-    print("EXPEDIENTE:", expediente_id)
-    print("ESTADO:", estado)
+
+    print("Correo:", subject)
+    print("Expediente:", expediente_id)
+    print("Estado:", estado)
+
+
+    if expediente_id and estado:
+
+        actualizar_estado(expediente_id, estado)
+
     print("-" * 40)
