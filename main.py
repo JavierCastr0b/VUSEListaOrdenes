@@ -77,7 +77,7 @@ print("Buscando correos")
 
 status, messages = mail.search(
     None,
-    '(FROM "javier.castro@utec.edu.pe" SUBJECT "VUCE")'
+    '(FROM "julio@dispositivosmedicos.com.pe" SUBJECT "VUCE")'
 )
 
 if status != "OK":
