@@ -3,7 +3,6 @@ import email
 import re
 import os
 from email.header import decode_header
-
 import gspread
 from google.oauth2.service_account import Credentials
 
