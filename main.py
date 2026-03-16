@@ -10,12 +10,6 @@ print("Script iniciado")
 
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
-print("EMAIL_USER:", EMAIL_USER)
-print("EMAIL_PASS cargado:", EMAIL_PASS is not None)
-
-if not EMAIL_USER or not EMAIL_PASS:
-    raise Exception("Faltan variables EMAIL_USER o EMAIL_PASS")
-
 
 # -------------------------
 # GOOGLE SHEETS
@@ -68,11 +62,10 @@ def actualizar_estado(expediente, estado):
 # GMAIL
 # -------------------------
 
-print("Conectando a Gmail")
+print("Conectando a correo")
 
-mail = imaplib.IMAP4_SSL("imap.gmail.com")
+mail = imaplib.IMAP4_SSL("outlook.office365.com")
 mail.login(EMAIL_USER, EMAIL_PASS)
-
 mail.select("INBOX")
 
 print("Buscando correos")
