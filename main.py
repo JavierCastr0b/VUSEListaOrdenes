@@ -10,6 +10,8 @@ print("Script iniciado")
 
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
+print("EMAIL_USER:", EMAIL_USER)
+print("EMAIL_PASS cargado:", EMAIL_PASS is not None)
 
 if not EMAIL_USER or not EMAIL_PASS:
     raise Exception("Faltan variables EMAIL_USER o EMAIL_PASS")
@@ -77,7 +79,7 @@ print("Buscando correos")
 
 status, messages = mail.search(
     None,
-    '(FROM "julio@dispositivosmedicos.com.pe" SUBJECT "VUCE")'
+    '(FROM "javiercastrob58@gmail.com" SUBJECT "VUCE")'
 )
 
 if status != "OK":
