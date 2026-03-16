@@ -62,10 +62,11 @@ def actualizar_estado(expediente, estado):
 # GMAIL
 # -------------------------
 
-print("Conectando a correo")
+print("Conectando a Gmail")
 
-mail = imaplib.IMAP4_SSL("outlook.office365.com")
+mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(EMAIL_USER, EMAIL_PASS)
+
 mail.select("INBOX")
 
 print("Buscando correos")
