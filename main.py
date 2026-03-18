@@ -50,8 +50,7 @@ def actualizar_estado(expediente, estado):
     for i, row in enumerate(rows):
 
         if str(row["EXP"]).strip() == str(expediente).strip():
-
-            fecha_hoy = datetime.now().strftime("%d/%m/%Y")
+            fecha_hoy = datetime.now().strftime("%m/%d/%Y")
 
             # 🔥 Actualiza ESTADO (H) y F. NOTIF (I) en una sola llamada
             sheet.update(f'H{i+2}:I{i+2}', [[estado, fecha_hoy]])
