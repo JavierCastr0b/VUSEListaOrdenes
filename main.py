@@ -5,8 +5,9 @@ import os
 from email.header import decode_header
 import gspread
 from google.oauth2.service_account import Credentials
+from datetime import datetime
 
-print("Script iniciado")
+print("🚀 Script iniciado")
 
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASS = os.getenv("EMAIL_PASS")
@@ -15,7 +16,7 @@ EMAIL_PASS = os.getenv("EMAIL_PASS")
 # GOOGLE SHEETS
 # -------------------------
 
-print("Conectando a Google Sheets")
+print("📊 Conectando a Google Sheets")
 
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -23,7 +24,7 @@ scope = [
 ]
 
 if not os.path.exists("credentials.json"):
-    raise Exception("No existe credentials.json")
+    raise Exception("❌ No existe credentials.json")
 
 creds = Credentials.from_service_account_file(
     "credentials.json",
@@ -36,7 +37,7 @@ sheet = client.open_by_key(
     "14BuCVESXSJjrF2v9PDSa4mpkZj_L1ptfNAmayxfzcf0"
 ).worksheet("Hoja1")
 
-print("Conectado a Sheets")
+print("✅ Conectado a Sheets")
 
 
 def actualizar_estado(expediente, estado):
@@ -50,26 +51,29 @@ def actualizar_estado(expediente, estado):
 
         if str(row["EXP"]).strip() == str(expediente).strip():
 
-            sheet.update_cell(i + 2, 8, estado)
+            fecha_hoy = datetime.now().strftime("%d/%m/%Y")
 
-            print("Actualizado:", expediente, estado)
+            # 🔥 Actualiza ESTADO (H) y F. NOTIF (I) en una sola llamada
+            sheet.update(f'H{i+2}:I{i+2}', [[estado, fecha_hoy]])
+
+            print(f"✅ Actualizado: EXP {expediente} → {estado} | Fecha: {fecha_hoy}")
             return
 
-    print("Expediente no encontrado:", expediente)
+    print(f"⚠️ Expediente no encontrado: {expediente}")
 
 
 # -------------------------
 # GMAIL
 # -------------------------
 
-print("Conectando a Gmail")
+print("📥 Conectando a Gmail")
 
 mail = imaplib.IMAP4_SSL("imap.gmail.com")
 mail.login(EMAIL_USER, EMAIL_PASS)
 
 mail.select("INBOX")
 
-print("Buscando correos")
+print("🔎 Buscando correos")
 
 status, messages = mail.search(
     None,
@@ -77,11 +81,11 @@ status, messages = mail.search(
 )
 
 if status != "OK":
-    raise Exception("Error buscando correos")
+    raise Exception("❌ Error buscando correos")
 
 ids = messages[0].split()
 
-print("Correos encontrados:", len(ids))
+print("📨 Correos encontrados:", len(ids))
 
 # últimos 10 correos
 ids = ids[-10:]
@@ -92,7 +96,7 @@ for num in reversed(ids):
     status, data = mail.fetch(num, "(RFC822)")
 
     if status != "OK":
-        print("Error leyendo correo")
+        print("⚠️ Error leyendo correo")
         continue
 
     msg = email.message_from_bytes(data[0][1])
@@ -108,25 +112,19 @@ for num in reversed(ids):
     body = ""
 
     if msg.is_multipart():
-
         for part in msg.walk():
-
             content_type = part.get_content_type()
 
             if content_type in ["text/plain", "text/html"]:
-
                 payload = part.get_payload(decode=True)
 
                 if payload:
                     body += payload.decode(errors="ignore")
-
     else:
-
         payload = msg.get_payload(decode=True)
 
         if payload:
             body = payload.decode(errors="ignore")
-
 
     texto = subject + " " + body
 
@@ -157,6 +155,7 @@ for num in reversed(ids):
     elif "Se Anula por Caducidad" in texto:
         estado = "CADUCADO"
 
+
     # -------------------------
     # EXTRAER EXPEDIENTE
     # -------------------------
@@ -170,15 +169,15 @@ for num in reversed(ids):
     expediente_id = expediente.group(1) if expediente else None
 
 
-    print("Correo:", subject)
-    print("Expediente:", expediente_id)
-    print("Estado:", estado)
+    print("📧 Correo:", subject)
+    print("📄 Expediente:", expediente_id)
+    print("📌 Estado:", estado)
 
 
     if expediente_id and estado:
         actualizar_estado(expediente_id, estado)
 
-    print("-" * 40)
+    print("-" * 50)
 
 
-print("Script terminado")
+print("🏁 Script terminado")
