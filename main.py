@@ -76,7 +76,7 @@ print("🔎 Buscando correos")
 
 status, messages = mail.search(
     None,
-    '(FROM "julio@dispositivosmedicos.com.pe" SUBJECT "VUCE")'
+    '(UNSEEN FROM "julio@dispositivosmedicos.com.pe" SUBJECT "VUCE")'
 )
 
 if status != "OK":
@@ -88,7 +88,6 @@ print("📨 Correos encontrados:", len(ids))
 
 # últimos 10 correos
 ids = ids[-10:]
-
 
 for num in reversed(ids):
 
@@ -176,7 +175,9 @@ for num in reversed(ids):
     if expediente_id and estado:
         actualizar_estado(expediente_id, estado)
 
+
+    # ✅ CLAVE: marcar correo como leído
+    mail.store(num, '+FLAGS', '\\Seen')
+
+    print("📬 Marcado como leído:", num)
     print("-" * 50)
-
-
-print("🏁 Script terminado")
