@@ -134,6 +134,9 @@ for num in reversed(ids):
 
     if "Se ha iniciado el Trámite" in texto:
         estado = "PENDIENTE DE RESPUESTA DE LA ENTIDAD"
+        
+    elif "Se ha Admitido la Presentacion" in texto:
+        estado = "PENDIENTE DE RESPUESTA DE LA ENTIDAD"
 
     elif "Se ha Admitido la Respuesta" in texto:
         estado = "RESPUESTA DEL USUARIO"
